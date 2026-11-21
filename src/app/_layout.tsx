@@ -1,18 +1,40 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { AppColors } from '@/constants/colors';
+import { HabitsProvider, useHabits } from '@/context/habits-context';
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+function SplashGate() {
+  const { status } = useHabits();
+  useEffect(() => {
+    if (status !== 'loading') SplashScreen.hideAsync().catch(() => {});
+  }, [status]);
+  return null;
+}
+
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <HabitsProvider>
+        <SplashGate />
+        <StatusBar style="dark" />
+        <Stack
+          screenOptions={{
+            contentStyle: { backgroundColor: AppColors.background },
+            headerStyle: { backgroundColor: AppColors.background },
+            headerTintColor: AppColors.accent,
+            headerTitleStyle: { color: AppColors.text },
+            headerShadowVisible: false,
+          }}>
+          <Stack.Screen name="index" options={{ headerShown: false, title: 'Habit Streaks' }} />
+          <Stack.Screen name="habit/[id]" options={{ title: 'Habit' }} />
+        </Stack>
+      </HabitsProvider>
+    </SafeAreaProvider>
   );
 }
