@@ -17,7 +17,7 @@ export function toDateKey(date: Date): string {
 }
 
 /** Parses a YYYY-MM-DD key into a local-time Date (midday, to stay clear of DST edges). */
-function fromDateKey(key: string): Date {
+export function fromDateKey(key: string): Date {
   const [y, m, d] = key.split('-').map(Number);
   return new Date(y, m - 1, d, 12);
 }

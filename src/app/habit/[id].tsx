@@ -1,13 +1,15 @@
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/button';
 import { AppColors } from '@/constants/colors';
+import { cardShadow, Radius, Space } from '@/constants/layout';
 import { useHabits } from '@/context/habits-context';
 import { useToday } from '@/hooks/use-today';
 import { confirmDestructive } from '@/lib/alert';
-import { currentStreak, type Habit, lastNDays, longestStreak } from '@/lib/habits';
+import { currentStreak, fromDateKey, type Habit, lastNDays, longestStreak } from '@/lib/habits';
 
 const WEEKDAY = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -24,7 +26,11 @@ export default function HabitDetailScreen() {
   if (!habit) {
     return (
       <View style={styles.missing}>
-        <Text style={styles.label}>{status === 'loading' ? 'Loading…' : 'Habit not found.'}</Text>
+        {status === 'loading' ? (
+          <ActivityIndicator size="large" color={AppColors.accent} />
+        ) : (
+          <Text style={styles.missingText}>Habit not found.</Text>
+        )}
       </View>
     );
   }
@@ -49,59 +55,53 @@ export default function HabitDetailScreen() {
   };
 
   return (
-    <>
-      <Stack.Screen options={{ title: habit.name }} />
-      <ScrollView
-        style={styles.screen}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}>
-        <Text style={styles.name} accessibilityRole="header">
-          {habit.name}
-        </Text>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Space.xl + Space.xs }]}>
+      <Text style={styles.name} accessibilityRole="header">
+        {habit.name}
+      </Text>
 
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>🔥 {current}</Text>
-            <Text style={styles.label}>Current streak</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>🏆 {longest}</Text>
-            <Text style={styles.label}>Longest streak</Text>
-          </View>
+      <View style={styles.statsRow}>
+        <View style={[styles.statCard, styles.statCardAccent]}>
+          <Text style={styles.statValue}>🔥 {current}</Text>
+          <Text style={styles.statLabelOnAccent}>Current streak</Text>
         </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>🏆 {longest}</Text>
+          <Text style={styles.statLabel}>Longest streak</Text>
+        </View>
+      </View>
 
-        <View style={styles.weekCard}>
-          <Text style={styles.sectionTitle}>Last 7 days</Text>
-          <View style={styles.weekRow}>
-            {week.map((day) => {
-              const filled = done.has(day);
-              const [y, m, d] = day.split('-').map(Number);
-              const weekday = WEEKDAY[new Date(y, m - 1, d).getDay()];
-              return (
-                <View
-                  key={day}
-                  style={styles.dayCol}
-                  accessible
-                  accessibilityLabel={`${day === today ? 'Today' : day}: ${filled ? 'done' : 'not done'}`}>
-                  <View style={[styles.dot, filled && styles.dotFilled]} />
-                  <Text style={[styles.dayLabel, day === today && styles.todayLabel]}>
-                    {day === today ? 'Today' : weekday}
-                  </Text>
+      <View style={styles.weekCard}>
+        <Text style={styles.sectionTitle}>Last 7 days</Text>
+        <View style={styles.weekRow}>
+          {week.map((day) => {
+            const filled = done.has(day);
+            const isToday = day === today;
+            const weekday = WEEKDAY[fromDateKey(day).getDay()];
+            return (
+              <View
+                key={day}
+                style={styles.dayCol}
+                accessible
+                accessibilityLabel={`${isToday ? 'Today' : day}: ${filled ? 'done' : 'not done'}`}>
+                <View style={[styles.dot, filled && styles.dotFilled, isToday && styles.dotToday]}>
+                  {filled && <Text style={styles.dotCheck}>✓</Text>}
                 </View>
-              );
-            })}
-          </View>
+                <Text style={[styles.dayLabel, isToday && styles.todayLabel]}>
+                  {isToday ? 'Today' : weekday}
+                </Text>
+              </View>
+            );
+          })}
         </View>
+      </View>
 
-        <View style={styles.spacer} />
+      <View style={styles.spacer} />
 
-        <Pressable
-          onPress={handleDelete}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed]}>
-          <Text style={styles.deleteText}>Delete</Text>
-        </Pressable>
-      </ScrollView>
-    </>
+      <Button label="Delete" variant="danger" onPress={handleDelete} />
+    </ScrollView>
   );
 }
 
@@ -112,8 +112,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    padding: 20,
-    gap: 16,
+    paddingHorizontal: Space.xl,
+    paddingTop: Space.sm,
+    gap: Space.lg,
   },
   missing: {
     flex: 1,
@@ -121,36 +122,57 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: AppColors.background,
   },
+  missingText: {
+    fontSize: 17,
+    color: AppColors.textMuted,
+  },
   name: {
     fontSize: 30,
+    lineHeight: 36,
     fontWeight: '800',
+    letterSpacing: -0.4,
     color: AppColors.text,
+    marginBottom: Space.xs,
   },
   statsRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: Space.md,
   },
   statCard: {
     flex: 1,
     backgroundColor: AppColors.card,
-    borderRadius: 16,
-    padding: 16,
-    gap: 4,
+    borderRadius: Radius.card,
+    borderCurve: 'continuous',
+    padding: Space.lg + 2,
+    gap: Space.xs,
+    boxShadow: cardShadow,
+  },
+  statCardAccent: {
+    backgroundColor: AppColors.accent,
   },
   statValue: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '800',
-    color: AppColors.accent,
+    color: AppColors.text,
+    fontVariant: ['tabular-nums'],
   },
-  label: {
+  statLabel: {
     fontSize: 15,
+    fontWeight: '500',
     color: AppColors.textMuted,
+  },
+  statLabelOnAccent: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: AppColors.onAccent,
   },
   weekCard: {
     backgroundColor: AppColors.card,
-    borderRadius: 16,
-    padding: 16,
-    gap: 14,
+    borderRadius: Radius.card,
+    borderCurve: 'continuous',
+    padding: Space.lg + 2,
+    gap: Space.lg,
+    boxShadow: cardShadow,
   },
   sectionTitle: {
     fontSize: 17,
@@ -162,22 +184,36 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   dayCol: {
-    alignItems: 'center',
-    gap: 6,
     flex: 1,
+    alignItems: 'center',
+    gap: Space.sm,
   },
   dot: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2.5,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 2,
+    borderColor: AppColors.border,
+    backgroundColor: AppColors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dotToday: {
     borderColor: AppColors.accent,
+    borderWidth: 2.5,
   },
   dotFilled: {
     backgroundColor: AppColors.accent,
+    borderColor: AppColors.accent,
+  },
+  dotCheck: {
+    color: AppColors.onAccent,
+    fontSize: 16,
+    fontWeight: '800',
   },
   dayLabel: {
-    fontSize: 12,
+    fontSize: 13,
+    fontWeight: '500',
     color: AppColors.textMuted,
   },
   todayLabel: {
@@ -186,20 +222,6 @@ const styles = StyleSheet.create({
   },
   spacer: {
     flex: 1,
-    minHeight: 24,
-  },
-  deleteButton: {
-    backgroundColor: AppColors.danger,
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  deleteText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  pressed: {
-    opacity: 0.6,
+    minHeight: Space.xl + Space.xs,
   },
 });

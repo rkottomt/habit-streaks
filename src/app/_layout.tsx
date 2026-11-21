@@ -28,11 +28,11 @@ export default function RootLayout() {
             contentStyle: { backgroundColor: AppColors.background },
             headerStyle: { backgroundColor: AppColors.background },
             headerTintColor: AppColors.accent,
-            headerTitleStyle: { color: AppColors.text },
+            headerTitleStyle: { color: AppColors.text, fontWeight: '700', fontSize: 17 },
             headerShadowVisible: false,
           }}>
           <Stack.Screen name="index" options={{ headerShown: false, title: 'Habit Streaks' }} />
-          <Stack.Screen name="habit/[id]" options={{ title: 'Habit' }} />
+          <Stack.Screen name="habit/[id]" options={{ title: 'Habit details' }} />
         </Stack>
       </HabitsProvider>
     </SafeAreaProvider>
