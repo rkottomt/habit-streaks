@@ -1,46 +1,31 @@
-# Welcome to your Expo app 👋
+# Habit Streaks
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## What it does and why
+Habit Streaks lets you add daily habits, check them off each day, and see how many days in a row you've kept them up. I picked it because I always forget my habits after a few days, and seeing a streak number makes me want to keep it going.
 
-## Get started
+## Screens
+**Home:** Shows today's date, a text box to add a habit, and your habits as cards with a 🔥 streak count. Tap the circle to check off today, or tap the card to open its details.
 
-1. Install dependencies
+**Habit details:** Shows the current streak, the longest streak, and the last 7 days as circles. You can also delete the habit here after confirming.
 
-   ```bash
-   npm install
+## Setup and running
+1. Install Node.js 22.13 or newer (I used Node 24.13.0).
+2. Clone the repo, then run:
    ```
-
-2. Start the app
-
-   ```bash
+   npm install
+   npx expo login
    npx expo start
    ```
+3. Install Expo Go on your phone and sign in with the same Expo account as the CLI.
+4. Connect your phone to the same Wi-Fi as your computer, then scan the QR code (iPhone: Camera app, Android: inside Expo Go). If it won't connect, use `npx expo start --tunnel`.
 
-In the output, you'll find options to open the app in a
+Built with **Expo SDK 58** and Expo Router. Tested on my iPhone using Expo Go.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## What surprised me
+I was surprised that the phone just downloads the code from my laptop over Wi-Fi and updates as soon as I save a file. I also didn't expect that each file in `src/app/` automatically becomes its own screen.
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Review findings I didn't fix
+- **#21, #22:** "Habit not found" showing on a load error, and the id possibly being an array, are edge cases I couldn't trigger in normal use.
+- **#23:** Screen reader labels using raw dates is a fair point, but accessibility was out of scope for this version.
+- **#26, #27:** These were partly fixed in polish. The leftover parts are small code style issues that don't change how the app works.
+- **#28:** I tested the streak logic by hand on my phone instead of adding a test framework, to keep the project small.
