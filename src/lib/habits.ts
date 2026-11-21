@@ -85,21 +85,37 @@ export function createId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-/** Validates untrusted stored data, dropping anything malformed. */
-export function sanitizeHabits(value: unknown): Habit[] {
+export type SanitizeResult = {
+  habits: Habit[];
+  /** True if anything was dropped or altered, i.e. saving `habits` would lose stored data. */
+  lossy: boolean;
+};
+
+/** Validates untrusted stored data, dropping anything malformed and reporting whether it did. */
+export function sanitizeHabits(value: unknown): SanitizeResult {
   if (!Array.isArray(value)) throw new Error('Stored habits are not a list');
   const seenIds = new Set<string>();
   const habits: Habit[] = [];
+  let lossy = false;
   for (const item of value) {
-    if (typeof item !== 'object' || item === null) continue;
+    if (typeof item !== 'object' || item === null) {
+      lossy = true;
+      continue;
+    }
     const { id, name, completedDates } = item as Record<string, unknown>;
-    if (typeof id !== 'string' || !id || seenIds.has(id)) continue;
-    if (typeof name !== 'string' || !name.trim()) continue;
-    const dates = Array.isArray(completedDates)
-      ? [...new Set(completedDates.filter((d): d is string => typeof d === 'string' && DATE_KEY_RE.test(d)))]
-      : [];
+    if (typeof id !== 'string' || !id || seenIds.has(id) || typeof name !== 'string' || !name.trim()) {
+      lossy = true;
+      continue;
+    }
+    const rawDates = Array.isArray(completedDates) ? completedDates : [];
+    if (!Array.isArray(completedDates)) lossy = true;
+    const validDates = rawDates.filter((d): d is string => typeof d === 'string' && DATE_KEY_RE.test(d));
+    if (validDates.length !== rawDates.length) lossy = true;
+    const cleanName = name.trim().slice(0, MAX_NAME_LENGTH);
+    if (cleanName.length < name.trim().length) lossy = true;
     seenIds.add(id);
-    habits.push({ id, name: name.trim().slice(0, MAX_NAME_LENGTH), completedDates: dates });
+    // Removing duplicate dates doesn't lose information, so it doesn't count as lossy.
+    habits.push({ id, name: cleanName, completedDates: [...new Set(validDates)] });
   }
-  return habits;
+  return { habits, lossy };
 }

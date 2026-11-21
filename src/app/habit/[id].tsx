@@ -1,4 +1,5 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -6,7 +7,7 @@ import { AppColors } from '@/constants/colors';
 import { useHabits } from '@/context/habits-context';
 import { useToday } from '@/hooks/use-today';
 import { confirmDestructive } from '@/lib/alert';
-import { currentStreak, lastNDays, longestStreak } from '@/lib/habits';
+import { currentStreak, type Habit, lastNDays, longestStreak } from '@/lib/habits';
 
 const WEEKDAY = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -15,7 +16,10 @@ export default function HabitDetailScreen() {
   const { habits, status, deleteHabit } = useHabits();
   const today = useToday();
   const insets = useSafeAreaInsets();
-  const habit = habits.find((h) => h.id === id);
+  // Snapshot of a habit being deleted. This screen stays mounted during the back animation,
+  // so it keeps rendering the snapshot instead of flashing "Habit not found."
+  const [deletedHabit, setDeletedHabit] = useState<Habit | null>(null);
+  const habit = habits.find((h) => h.id === id) ?? deletedHabit;
 
   if (!habit) {
     return (
@@ -31,16 +35,17 @@ export default function HabitDetailScreen() {
   const week = lastNDays(today, 7);
 
   const handleDelete = async () => {
+    if (deletedHabit) return;
     const confirmed = await confirmDestructive(
       'Delete habit?',
       `Are you sure? "${habit.name}" and its history will be removed.`,
       'Delete',
     );
     if (!confirmed) return;
-    const habitId = habit.id;
+    setDeletedHabit(habit);
     if (router.canGoBack()) router.back();
     else router.replace('/');
-    deleteHabit(habitId);
+    deleteHabit(habit.id);
   };
 
   return (
